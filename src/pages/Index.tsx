@@ -21,8 +21,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
-const SAMPLE_PROMPTS = [
+type Prompt = {
+  id: number;
+  name: string;
+  description: string;
+  parameters: number;
+};
+
+const SAMPLE_PROMPTS: Prompt[] = [
   {
     id: 1,
     name: "Sales Email",
@@ -39,6 +47,40 @@ const SAMPLE_PROMPTS = [
 
 export default function Index() {
   const [isOpen, setIsOpen] = useState(false);
+  const [prompts, setPrompts] = useState<Prompt[]>(SAMPLE_PROMPTS);
+  const [newPrompt, setNewPrompt] = useState({
+    name: "",
+    description: "",
+  });
+
+  const handleCreatePrompt = () => {
+    if (newPrompt.name.trim() === "") {
+      toast.error("Prompt name cannot be empty");
+      return;
+    }
+
+    if (newPrompt.description.trim() === "") {
+      toast.error("Prompt description cannot be empty");
+      return;
+    }
+
+    const prompt: Prompt = {
+      id: Date.now(),
+      name: newPrompt.name.trim(),
+      description: newPrompt.description.trim(),
+      parameters: 0,
+    };
+
+    setPrompts([...prompts, prompt]);
+    setNewPrompt({ name: "", description: "" });
+    setIsOpen(false);
+    toast.success("Prompt created successfully");
+  };
+
+  const handleDeletePrompt = (id: number) => {
+    setPrompts(prompts.filter((prompt) => prompt.id !== id));
+    toast.success("Prompt deleted successfully");
+  };
 
   return (
     <div className="animate-fadeIn">
@@ -66,20 +108,33 @@ export default function Index() {
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" placeholder="e.g., Sales Email" />
+                <Input 
+                  id="name" 
+                  placeholder="e.g., Sales Email"
+                  value={newPrompt.name}
+                  onChange={(e) => setNewPrompt({ ...newPrompt, name: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
                   placeholder="Describe what this prompt does..."
+                  value={newPrompt.description}
+                  onChange={(e) => setNewPrompt({ ...newPrompt, description: e.target.value })}
                 />
               </div>
               <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setIsOpen(false)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsOpen(false);
+                    setNewPrompt({ name: "", description: "" });
+                  }}
+                >
                   Cancel
                 </Button>
-                <Button onClick={() => setIsOpen(false)}>Create Prompt</Button>
+                <Button onClick={handleCreatePrompt}>Create Prompt</Button>
               </div>
             </div>
           </DialogContent>
@@ -97,7 +152,7 @@ export default function Index() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {SAMPLE_PROMPTS.map((prompt) => (
+            {prompts.map((prompt) => (
               <TableRow key={prompt.id}>
                 <TableCell className="font-medium">{prompt.name}</TableCell>
                 <TableCell>{prompt.description}</TableCell>
@@ -107,7 +162,11 @@ export default function Index() {
                     <Button size="icon" variant="ghost">
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button size="icon" variant="ghost">
+                    <Button 
+                      size="icon" 
+                      variant="ghost"
+                      onClick={() => handleDeletePrompt(prompt.id)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
