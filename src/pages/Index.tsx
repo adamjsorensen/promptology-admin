@@ -22,12 +22,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Parameter, PromptParameter } from "@/types/parameters";
+import { ParameterSelector } from "@/components/prompts/ParameterSelector";
+import { SAMPLE_PARAMETERS } from "@/data/sampleParameters";
 
 type Prompt = {
   id: number;
   name: string;
   description: string;
-  parameters: number;
+  parameters: PromptParameter[];
 };
 
 const SAMPLE_PROMPTS: Prompt[] = [
@@ -35,13 +38,27 @@ const SAMPLE_PROMPTS: Prompt[] = [
     id: 1,
     name: "Sales Email",
     description: "Generate persuasive sales emails",
-    parameters: 3,
+    parameters: [
+      {
+        parameterId: 1,
+        enabledTweaks: ["Head of Marketing", "CEO"],
+      },
+      {
+        parameterId: 2,
+        enabledTweaks: ["Professional", "Urgent"],
+      },
+    ],
   },
   {
     id: 2,
     name: "Blog Post",
     description: "Create engaging blog content",
-    parameters: 5,
+    parameters: [
+      {
+        parameterId: 2,
+        enabledTweaks: ["Casual"],
+      },
+    ],
   },
 ];
 
@@ -49,11 +66,25 @@ export default function Index() {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [prompts, setPrompts] = useState<Prompt[]>(SAMPLE_PROMPTS);
-  const [newPrompt, setNewPrompt] = useState({
+  const [newPrompt, setNewPrompt] = useState<Omit<Prompt, 'id'>>({
     name: "",
     description: "",
+    parameters: [],
   });
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
+  const [availableParameters] = useState<Parameter[]>(SAMPLE_PARAMETERS);
+
+  const getParameterCount = (parameters: PromptParameter[]) => {
+    return parameters.reduce((acc, param) => acc + param.enabledTweaks.length, 0);
+  };
+
+  const getParameterSummary = (parameters: PromptParameter[]) => {
+    return parameters.map(param => {
+      const parameter = availableParameters.find(p => p.id === param.parameterId);
+      if (!parameter) return '';
+      return `${parameter.name} (${param.enabledTweaks.length} tweaks)`;
+    }).join(', ');
+  };
 
   const handleCreatePrompt = () => {
     if (newPrompt.name.trim() === "") {
@@ -70,11 +101,11 @@ export default function Index() {
       id: Date.now(),
       name: newPrompt.name.trim(),
       description: newPrompt.description.trim(),
-      parameters: 0,
+      parameters: newPrompt.parameters,
     };
 
     setPrompts([...prompts, prompt]);
-    setNewPrompt({ name: "", description: "" });
+    setNewPrompt({ name: "", description: "", parameters: [] });
     setIsOpen(false);
     toast.success("Prompt created successfully");
   };
@@ -147,12 +178,22 @@ export default function Index() {
                   onChange={(e) => setNewPrompt({ ...newPrompt, description: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Parameters</Label>
+                <ParameterSelector
+                  availableParameters={availableParameters}
+                  selectedParameters={newPrompt.parameters}
+                  onChange={(parameters) =>
+                    setNewPrompt({ ...newPrompt, parameters })
+                  }
+                />
+              </div>
               <div className="flex justify-end gap-3">
                 <Button 
                   variant="outline" 
                   onClick={() => {
                     setIsOpen(false);
-                    setNewPrompt({ name: "", description: "" });
+                    setNewPrompt({ name: "", description: "", parameters: [] });
                   }}
                 >
                   Cancel
@@ -179,7 +220,16 @@ export default function Index() {
               <TableRow key={prompt.id}>
                 <TableCell className="font-medium">{prompt.name}</TableCell>
                 <TableCell>{prompt.description}</TableCell>
-                <TableCell>{prompt.parameters}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <span className="font-medium">
+                      {getParameterCount(prompt.parameters)} tweaks enabled
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {getParameterSummary(prompt.parameters)}
+                    </span>
+                  </div>
+                </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
                     <Button 
@@ -240,16 +290,13 @@ export default function Index() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-parameters">Parameters</Label>
-                <Input 
-                  id="edit-parameters" 
-                  type="number"
-                  min="0"
-                  value={editingPrompt.parameters}
-                  onChange={(e) => setEditingPrompt({ 
-                    ...editingPrompt, 
-                    parameters: parseInt(e.target.value) || 0
-                  })}
+                <Label>Parameters</Label>
+                <ParameterSelector
+                  availableParameters={availableParameters}
+                  selectedParameters={editingPrompt.parameters}
+                  onChange={(parameters) =>
+                    setEditingPrompt({ ...editingPrompt, parameters })
+                  }
                 />
               </div>
               <div className="flex justify-end gap-3">

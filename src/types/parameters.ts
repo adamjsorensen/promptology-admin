@@ -9,3 +9,9 @@ export type Parameter = {
   name: string;
   tweaks: Tweak[];
 };
+
+export type PromptParameter = {
+  parameterId: number;
+  enabledTweaks: string[]; // Stores the titles of enabled tweaks
+};
+
