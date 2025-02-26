@@ -1,12 +1,6 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -15,43 +9,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
-
-type Tweak = {
-  title: string;
-  content: string;
-};
-
-type Parameter = {
-  id: number;
-  name: string;
-  tweaks: Tweak[];
-};
-
-const SAMPLE_PARAMETERS: Parameter[] = [
-  {
-    id: 1,
-    name: "Target Audience",
-    tweaks: [
-      { title: "Head of Marketing", content: "You are writing to a Head of Marketing who values data-driven insights and strategic thinking." },
-      { title: "CEO", content: "You are writing to a CEO who focuses on high-level business impact and ROI." },
-      { title: "Sales Manager", content: "You are writing to a Sales Manager who cares about pipeline growth and team performance." },
-    ],
-  },
-  {
-    id: 2,
-    name: "Tone",
-    tweaks: [
-      { title: "Professional", content: "Maintain a formal and business-appropriate tone throughout the content." },
-      { title: "Casual", content: "Use a friendly and conversational tone, as if speaking to a colleague." },
-      { title: "Urgent", content: "Emphasize immediacy and critical timing in the message." },
-    ],
-  },
-];
+import { Parameter } from "@/types/parameters";
+import { SAMPLE_PARAMETERS } from "@/data/sampleParameters";
+import { ParameterForm } from "@/components/parameters/ParameterForm";
+import { ParameterCard } from "@/components/parameters/ParameterCard";
 
 export default function Parameters() {
   const [parameters, setParameters] = useState<Parameter[]>(SAMPLE_PARAMETERS);
@@ -121,111 +84,6 @@ export default function Parameters() {
     toast.success("Parameter deleted successfully");
   };
 
-  const ParameterForm = ({ isEdit = false }: { isEdit?: boolean }) => {
-    const param = isEdit ? editingParameter : newParameter;
-    const setParam = isEdit
-      ? setEditingParameter as (value: Parameter | null) => void
-      : setNewParameter;
-
-    if (!param || !setParam) return null;
-
-    return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Parameter Name</Label>
-          <Input
-            id="name"
-            value={param.name}
-            onChange={e => setParam({ ...param, name: e.target.value })}
-            placeholder="e.g., Writing Style"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Tweaks</Label>
-          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-            {param.tweaks.map((tweak, index) => (
-              <div key={index} className="space-y-2 p-4 border rounded-lg relative">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 top-2"
-                  onClick={() => {
-                    const newTweaks = param.tweaks.filter((_, i) => i !== index);
-                    setParam({
-                      ...param,
-                      tweaks: newTweaks.length ? newTweaks : [{ title: "", content: "" }],
-                    });
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <div>
-                  <Label>Title (Visible to Users)</Label>
-                  <Input
-                    value={tweak.title}
-                    onChange={e => {
-                      const newTweaks = [...param.tweaks];
-                      newTweaks[index] = { ...tweak, title: e.target.value };
-                      setParam({ ...param, tweaks: newTweaks });
-                    }}
-                    placeholder="e.g., Professional"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Content (Added to Prompt)</Label>
-                  <Textarea
-                    value={tweak.content}
-                    onChange={e => {
-                      const newTweaks = [...param.tweaks];
-                      newTweaks[index] = { ...tweak, content: e.target.value };
-                      setParam({ ...param, tweaks: newTweaks });
-                    }}
-                    placeholder="e.g., Maintain a formal and business-appropriate tone"
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={() => setParam({
-              ...param,
-              tweaks: [...param.tweaks, { title: "", content: "" }],
-            })}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Tweak
-          </Button>
-        </div>
-        <div className="flex justify-end gap-3 pt-4">
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (isEdit) {
-                setIsEditOpen(false);
-                setEditingParameter(null);
-              } else {
-                setIsAddOpen(false);
-                setNewParameter({ name: "", tweaks: [{ title: "", content: "" }] });
-              }
-            }}
-          >
-            Cancel
-          </Button>
-          <Button onClick={isEdit ? handleEditParameter : handleAddParameter}>
-            {isEdit ? "Update Parameter" : "Add Parameter"}
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="animate-fadeIn">
       <div className="flex justify-between items-center mb-8">
@@ -249,55 +107,30 @@ export default function Parameters() {
                 Create a new parameter with custom tweaks
               </DialogDescription>
             </DialogHeader>
-            <ParameterForm />
+            <ParameterForm
+              param={newParameter}
+              setParam={setNewParameter}
+              onCancel={() => {
+                setIsAddOpen(false);
+                setNewParameter({ name: "", tweaks: [{ title: "", content: "" }] });
+              }}
+              onSubmit={handleAddParameter}
+            />
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {parameters.map((parameter) => (
-          <Card key={parameter.id} className="hover:shadow-sm transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex justify-between items-start">
-                <span>{parameter.name}</span>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditingParameter(parameter);
-                      setIsEditOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteParameter(parameter.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardTitle>
-              <CardDescription>
-                {parameter.tweaks.length} available tweaks
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {parameter.tweaks.map((tweak) => (
-                  <span
-                    key={tweak.title}
-                    className="px-2 py-1 bg-accent rounded text-sm"
-                    title={tweak.content}
-                  >
-                    {tweak.title}
-                  </span>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <ParameterCard
+            key={parameter.id}
+            parameter={parameter}
+            onEdit={(param) => {
+              setEditingParameter(param);
+              setIsEditOpen(true);
+            }}
+            onDelete={handleDeleteParameter}
+          />
         ))}
 
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -308,7 +141,18 @@ export default function Parameters() {
                 Modify parameter details and tweaks
               </DialogDescription>
             </DialogHeader>
-            <ParameterForm isEdit />
+            {editingParameter && (
+              <ParameterForm
+                isEdit
+                param={editingParameter}
+                setParam={setEditingParameter}
+                onCancel={() => {
+                  setIsEditOpen(false);
+                  setEditingParameter(null);
+                }}
+                onSubmit={handleEditParameter}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>
