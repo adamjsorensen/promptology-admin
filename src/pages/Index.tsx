@@ -47,11 +47,13 @@ const SAMPLE_PROMPTS: Prompt[] = [
 
 export default function Index() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [prompts, setPrompts] = useState<Prompt[]>(SAMPLE_PROMPTS);
   const [newPrompt, setNewPrompt] = useState({
     name: "",
     description: "",
   });
+  const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
 
   const handleCreatePrompt = () => {
     if (newPrompt.name.trim() === "") {
@@ -75,6 +77,27 @@ export default function Index() {
     setNewPrompt({ name: "", description: "" });
     setIsOpen(false);
     toast.success("Prompt created successfully");
+  };
+
+  const handleEditPrompt = () => {
+    if (!editingPrompt) return;
+
+    if (editingPrompt.name.trim() === "") {
+      toast.error("Prompt name cannot be empty");
+      return;
+    }
+
+    if (editingPrompt.description.trim() === "") {
+      toast.error("Prompt description cannot be empty");
+      return;
+    }
+
+    setPrompts(prompts.map(prompt =>
+      prompt.id === editingPrompt.id ? editingPrompt : prompt
+    ));
+    setEditingPrompt(null);
+    setIsEditOpen(false);
+    toast.success("Prompt updated successfully");
   };
 
   const handleDeletePrompt = (id: number) => {
@@ -159,7 +182,14 @@ export default function Index() {
                 <TableCell>{prompt.parameters}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    <Button size="icon" variant="ghost">
+                    <Button 
+                      size="icon" 
+                      variant="ghost"
+                      onClick={() => {
+                        setEditingPrompt(prompt);
+                        setIsEditOpen(true);
+                      }}
+                    >
                       <Pencil className="w-4 h-4" />
                     </Button>
                     <Button 
@@ -176,6 +206,68 @@ export default function Index() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Prompt</DialogTitle>
+            <DialogDescription>
+              Modify prompt details and parameters
+            </DialogDescription>
+          </DialogHeader>
+          {editingPrompt && (
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Name</Label>
+                <Input 
+                  id="edit-name" 
+                  value={editingPrompt.name}
+                  onChange={(e) => setEditingPrompt({ 
+                    ...editingPrompt, 
+                    name: e.target.value 
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editingPrompt.description}
+                  onChange={(e) => setEditingPrompt({ 
+                    ...editingPrompt, 
+                    description: e.target.value 
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-parameters">Parameters</Label>
+                <Input 
+                  id="edit-parameters" 
+                  type="number"
+                  min="0"
+                  value={editingPrompt.parameters}
+                  onChange={(e) => setEditingPrompt({ 
+                    ...editingPrompt, 
+                    parameters: parseInt(e.target.value) || 0
+                  })}
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsEditOpen(false);
+                    setEditingPrompt(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleEditPrompt}>Update Prompt</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
