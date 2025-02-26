@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Parameter, PromptParameter } from "@/types/parameters";
+import { Parameter, PromptParameter, Prompt } from "@/types/parameters";
 import { ParameterSelector } from "@/components/prompts/ParameterSelector";
 import { SAMPLE_PARAMETERS } from "@/data/sampleParameters";
 
