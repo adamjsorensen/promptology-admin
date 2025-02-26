@@ -130,7 +130,7 @@ export default function Parameters() {
     if (!param || !setParam) return null;
 
     return (
-      <div className="space-y-4 pt-4">
+      <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Parameter Name</Label>
           <Input
@@ -142,7 +142,7 @@ export default function Parameters() {
         </div>
         <div className="space-y-2">
           <Label>Tweaks</Label>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
             {param.tweaks.map((tweak, index) => (
               <div key={index} className="space-y-2 p-4 border rounded-lg relative">
                 <Button
@@ -242,7 +242,7 @@ export default function Parameters() {
               Add Parameter
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Parameter</DialogTitle>
               <DialogDescription>
@@ -301,7 +301,7 @@ export default function Parameters() {
         ))}
 
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Parameter</DialogTitle>
               <DialogDescription>
