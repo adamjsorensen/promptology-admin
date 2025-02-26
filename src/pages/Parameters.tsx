@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -175,7 +175,7 @@ export default function Parameters() {
                 </div>
                 <div>
                   <Label>Content (Added to Prompt)</Label>
-                  <Input
+                  <Textarea
                     value={tweak.content}
                     onChange={e => {
                       const newTweaks = [...param.tweaks];
