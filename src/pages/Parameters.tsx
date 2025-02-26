@@ -7,7 +7,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -22,25 +21,47 @@ import { Label } from "@/components/ui/label";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
-const SAMPLE_PARAMETERS = [
+type Tweak = {
+  title: string;
+  content: string;
+};
+
+type Parameter = {
+  id: number;
+  name: string;
+  tweaks: Tweak[];
+};
+
+const SAMPLE_PARAMETERS: Parameter[] = [
   {
     id: 1,
     name: "Target Audience",
-    tweaks: ["Head of Marketing", "CEO", "Sales Manager"],
+    tweaks: [
+      { title: "Head of Marketing", content: "You are writing to a Head of Marketing who values data-driven insights and strategic thinking." },
+      { title: "CEO", content: "You are writing to a CEO who focuses on high-level business impact and ROI." },
+      { title: "Sales Manager", content: "You are writing to a Sales Manager who cares about pipeline growth and team performance." },
+    ],
   },
   {
     id: 2,
     name: "Tone",
-    tweaks: ["Professional", "Casual", "Urgent"],
+    tweaks: [
+      { title: "Professional", content: "Maintain a formal and business-appropriate tone throughout the content." },
+      { title: "Casual", content: "Use a friendly and conversational tone, as if speaking to a colleague." },
+      { title: "Urgent", content: "Emphasize immediacy and critical timing in the message." },
+    ],
   },
 ];
 
 export default function Parameters() {
-  const [parameters, setParameters] = useState(SAMPLE_PARAMETERS);
+  const [parameters, setParameters] = useState<Parameter[]>(SAMPLE_PARAMETERS);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editingParameter, setEditingParameter] = useState<typeof SAMPLE_PARAMETERS[0] | null>(null);
-  const [newParameter, setNewParameter] = useState({ name: "", tweaks: [""] });
+  const [editingParameter, setEditingParameter] = useState<Parameter | null>(null);
+  const [newParameter, setNewParameter] = useState<Omit<Parameter, "id">>({
+    name: "",
+    tweaks: [{ title: "", content: "" }],
+  });
 
   const handleAddParameter = () => {
     if (newParameter.name.trim() === "") {
@@ -48,9 +69,11 @@ export default function Parameters() {
       return;
     }
 
-    const validTweaks = newParameter.tweaks.filter(tweak => tweak.trim() !== "");
+    const validTweaks = newParameter.tweaks.filter(
+      tweak => tweak.title.trim() !== "" && tweak.content.trim() !== ""
+    );
     if (validTweaks.length === 0) {
-      toast.error("At least one tweak is required");
+      toast.error("At least one complete tweak is required");
       return;
     }
 
@@ -62,7 +85,7 @@ export default function Parameters() {
         tweaks: validTweaks,
       },
     ]);
-    setNewParameter({ name: "", tweaks: [""] });
+    setNewParameter({ name: "", tweaks: [{ title: "", content: "" }] });
     setIsAddOpen(false);
     toast.success("Parameter added successfully");
   };
@@ -75,9 +98,11 @@ export default function Parameters() {
       return;
     }
 
-    const validTweaks = editingParameter.tweaks.filter(tweak => tweak.trim() !== "");
+    const validTweaks = editingParameter.tweaks.filter(
+      tweak => tweak.title.trim() !== "" && tweak.content.trim() !== ""
+    );
     if (validTweaks.length === 0) {
-      toast.error("At least one tweak is required");
+      toast.error("At least one complete tweak is required");
       return;
     }
 
@@ -99,7 +124,7 @@ export default function Parameters() {
   const ParameterForm = ({ isEdit = false }: { isEdit?: boolean }) => {
     const param = isEdit ? editingParameter : newParameter;
     const setParam = isEdit
-      ? setEditingParameter
+      ? setEditingParameter as (value: Parameter | null) => void
       : setNewParameter;
 
     if (!param || !setParam) return null;
@@ -117,29 +142,50 @@ export default function Parameters() {
         </div>
         <div className="space-y-2">
           <Label>Tweaks</Label>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {param.tweaks.map((tweak, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  value={tweak}
-                  onChange={e => {
-                    const newTweaks = [...param.tweaks];
-                    newTweaks[index] = e.target.value;
-                    setParam({ ...param, tweaks: newTweaks });
-                  }}
-                  placeholder="e.g., Professional"
-                />
+              <div key={index} className="space-y-2 p-4 border rounded-lg relative">
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
+                  className="absolute right-2 top-2"
                   onClick={() => {
                     const newTweaks = param.tweaks.filter((_, i) => i !== index);
-                    setParam({ ...param, tweaks: newTweaks.length ? newTweaks : [""] });
+                    setParam({
+                      ...param,
+                      tweaks: newTweaks.length ? newTweaks : [{ title: "", content: "" }],
+                    });
                   }}
                 >
                   <X className="h-4 w-4" />
                 </Button>
+                <div>
+                  <Label>Title (Visible to Users)</Label>
+                  <Input
+                    value={tweak.title}
+                    onChange={e => {
+                      const newTweaks = [...param.tweaks];
+                      newTweaks[index] = { ...tweak, title: e.target.value };
+                      setParam({ ...param, tweaks: newTweaks });
+                    }}
+                    placeholder="e.g., Professional"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Content (Added to Prompt)</Label>
+                  <Input
+                    value={tweak.content}
+                    onChange={e => {
+                      const newTweaks = [...param.tweaks];
+                      newTweaks[index] = { ...tweak, content: e.target.value };
+                      setParam({ ...param, tweaks: newTweaks });
+                    }}
+                    placeholder="e.g., Maintain a formal and business-appropriate tone"
+                    className="mt-1"
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -148,7 +194,10 @@ export default function Parameters() {
             variant="outline"
             size="sm"
             className="mt-2"
-            onClick={() => setParam({ ...param, tweaks: [...param.tweaks, ""] })}
+            onClick={() => setParam({
+              ...param,
+              tweaks: [...param.tweaks, { title: "", content: "" }],
+            })}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Tweak
@@ -163,7 +212,7 @@ export default function Parameters() {
                 setEditingParameter(null);
               } else {
                 setIsAddOpen(false);
-                setNewParameter({ name: "", tweaks: [""] });
+                setNewParameter({ name: "", tweaks: [{ title: "", content: "" }] });
               }
             }}
           >
@@ -239,10 +288,11 @@ export default function Parameters() {
               <div className="flex flex-wrap gap-2">
                 {parameter.tweaks.map((tweak) => (
                   <span
-                    key={tweak}
+                    key={tweak.title}
                     className="px-2 py-1 bg-accent rounded text-sm"
+                    title={tweak.content}
                   >
-                    {tweak}
+                    {tweak.title}
                   </span>
                 ))}
               </div>
