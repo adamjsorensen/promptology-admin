@@ -26,18 +26,12 @@ import { Parameter, PromptParameter } from "@/types/parameters";
 import { ParameterSelector } from "@/components/prompts/ParameterSelector";
 import { SAMPLE_PARAMETERS } from "@/data/sampleParameters";
 
-type Prompt = {
-  id: number;
-  name: string;
-  description: string;
-  parameters: PromptParameter[];
-};
-
-const SAMPLE_PROMPTS: Prompt[] = [
+const SAMPLE_PROMPTS = [
   {
     id: 1,
     name: "Sales Email",
     description: "Generate persuasive sales emails",
+    basePrompt: "Write a persuasive sales email that convinces the reader to learn more about our product.",
     parameters: [
       {
         parameterId: 1,
@@ -53,6 +47,7 @@ const SAMPLE_PROMPTS: Prompt[] = [
     id: 2,
     name: "Blog Post",
     description: "Create engaging blog content",
+    basePrompt: "Write an informative blog post that educates and engages the reader.",
     parameters: [
       {
         parameterId: 2,
@@ -65,10 +60,11 @@ const SAMPLE_PROMPTS: Prompt[] = [
 export default function Index() {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [prompts, setPrompts] = useState<Prompt[]>(SAMPLE_PROMPTS);
+  const [prompts, setPrompts] = useState(SAMPLE_PROMPTS);
   const [newPrompt, setNewPrompt] = useState<Omit<Prompt, 'id'>>({
     name: "",
     description: "",
+    basePrompt: "",
     parameters: [],
   });
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
@@ -97,15 +93,21 @@ export default function Index() {
       return;
     }
 
+    if (newPrompt.basePrompt.trim() === "") {
+      toast.error("Base prompt cannot be empty");
+      return;
+    }
+
     const prompt: Prompt = {
       id: Date.now(),
       name: newPrompt.name.trim(),
       description: newPrompt.description.trim(),
+      basePrompt: newPrompt.basePrompt.trim(),
       parameters: newPrompt.parameters,
     };
 
     setPrompts([...prompts, prompt]);
-    setNewPrompt({ name: "", description: "", parameters: [] });
+    setNewPrompt({ name: "", description: "", basePrompt: "", parameters: [] });
     setIsOpen(false);
     toast.success("Prompt created successfully");
   };
@@ -120,6 +122,11 @@ export default function Index() {
 
     if (editingPrompt.description.trim() === "") {
       toast.error("Prompt description cannot be empty");
+      return;
+    }
+
+    if (editingPrompt.basePrompt.trim() === "") {
+      toast.error("Base prompt cannot be empty");
       return;
     }
 
@@ -179,6 +186,16 @@ export default function Index() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="basePrompt">Base Prompt</Label>
+                <Textarea
+                  id="basePrompt"
+                  placeholder="Enter the base prompt that will be enhanced with parameters..."
+                  value={newPrompt.basePrompt}
+                  onChange={(e) => setNewPrompt({ ...newPrompt, basePrompt: e.target.value })}
+                  className="min-h-[100px]"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label>Parameters</Label>
                 <ParameterSelector
                   availableParameters={availableParameters}
@@ -193,7 +210,7 @@ export default function Index() {
                   variant="outline" 
                   onClick={() => {
                     setIsOpen(false);
-                    setNewPrompt({ name: "", description: "", parameters: [] });
+                    setNewPrompt({ name: "", description: "", basePrompt: "", parameters: [] });
                   }}
                 >
                   Cancel
@@ -287,6 +304,18 @@ export default function Index() {
                     ...editingPrompt, 
                     description: e.target.value 
                   })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-basePrompt">Base Prompt</Label>
+                <Textarea
+                  id="edit-basePrompt"
+                  value={editingPrompt.basePrompt}
+                  onChange={(e) => setEditingPrompt({ 
+                    ...editingPrompt, 
+                    basePrompt: e.target.value 
+                  })}
+                  className="min-h-[100px]"
                 />
               </div>
               <div className="space-y-2">

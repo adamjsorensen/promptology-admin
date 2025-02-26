@@ -15,3 +15,10 @@ export type PromptParameter = {
   enabledTweaks: string[]; // Stores the titles of enabled tweaks
 };
 
+export type Prompt = {
+  id: number;
+  name: string;
+  description: string;
+  basePrompt: string;
+  parameters: PromptParameter[];
+};
